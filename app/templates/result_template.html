@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .fit-status {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+            padding: 20px 0;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .not-fit-status {
+            color: #F44336;
+            border-color: #F44336;
+        }
+
+        /* Styles for Match Checkmarks */
+        .match-yes {
+            color: green;
+        }
+
+        .match-no {
+            color: red;
+        }
+
+        .match-maybe {
+            color: orange;
+        }
+
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="navbar container">
+            <a href="/" class="active">Home</a>
+ 
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="{{ 'fit-status' if goodMatching else 'fit-status not-fit-status' }}">
+            {{ 'The candidate is a good match.' if goodMatching else 'The candidate is not a good match.' }}
+        </div>
+
+        <h1>{{ title }}</h1>
+
+        <h2>Required Skills Analysis:</h2>
+        <table>
+            <tr>
+                <th>Skill</th>
+                <th>Experience</th>
+                <th>References</th>
+                <th>Match</th>
+            </tr>
+            {% for skill in requiredSkills %}
+            <tr>
+                <td>{{ skill.skill }}</td>
+                <td>{{ skill.experience }}</td>
+                <td>
+                    {% for reference in skill.references %}
+                    <p>Position: {{ reference.position }}</p>
+                    <p>Years of Experience: {{ reference.yearsOfExperience }}</p>
+                    <p>Activities:</p>
+                    <ul>
+                        {% for activity in reference.activities %}
+                        <li>{{ activity }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endfor %}
+                </td>
+                <td><span class="match-{{ skill.match }}">{{ '✔' if skill.match == 'yes' else '✖' if skill.match == 'no' else '?' }}</span></td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <h2>Nice-to-Have Skills Analysis:</h2>
+        <table>
+            <tr>
+                <th>Skill</th>
+                <th>Experience</th>
+                <th>References</th>
+                <th>Match</th>
+            </tr>
+            {% for skill in niceToHaveSkills %}
+            <tr>
+                <td>{{ skill.skill }}</td>
+                <td>{{ skill.experience }}</td>
+                <td>
+                    {% for reference in skill.references %}
+                    <p>Position: {{ reference.position }}</p>
+                    <p>Years of Experience: {{ reference.yearsOfExperience }}</p>
+                    <p>Activities:</p>
+                    <ul>
+                        {% for activity in reference.activities %}
+                        <li>{{ activity }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endfor %}
+                </td>
+                <td><span class="match-{{ skill.match }}">{{ '✔' if skill.match == 'yes' else '✖' if skill.match == 'no' else '?' }}</span></td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <h2>Requirements:</h2>
+        <ul>
+            {% for requirement in requirements %}
+            <li>{{ requirement.requirement }}</li>
+            {% endfor %}
+        </ul>
+
+        <h2>Explanation:</h2>
+        <p>{{ explanation }}</p>
+    </div>
+</body>
+
+</html>

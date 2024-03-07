@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Deepmtch - Resume Analyzer</title>
+    <!-- <link rel="stylesheet" href="/static/styles.css"> -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css">
+    <!-- <script src="/static/main.js"></script> -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f6f6f6;
+            /* padding-top: 60px; */
+        }
+
+        /* Navbar Styles */
+        .navbar {
+            background-color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .navbar a {
+            margin: 0 10px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .navbar a:hover {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .navbar .active {
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 8px;
+        }
+
+        /* Table Styles */
+        table {
+            border: none;
+            margin-bottom: 20px;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        th {
+            background-color: #e9ecef;
+        }
+
+        .match-yes {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .match-no {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Others */
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+            margin-top: 20px;
+        }
+
+        .button {
+            display: block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .button:disabled {
+            background-color: #a5a5a5;
+            /* a gray color, but you can adjust as needed */
+            cursor: not-allowed;
+            /* cursor indicating that the item is not interactive */
+            opacity: 0.7;
+            /* making it slightly transparent to indicate it's disabled */
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        .spinner {
+            display: none;
+            border: 4px solid rgba(0, 0, 0, .1);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border-top: 4px solid #007bff;
+            animation: spin 1s linear infinite;
+            margin-left: 20px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const resumeForm = document.getElementById("resumeForm");
+            resumeForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                analyseAndDisplay();
+            });
+        });
+
+        function goBackToRoot() {
+            window.location.href = '/';
+        }
+        function analyseAndDisplay() {
+            // Show spinner and disable the button
+            const button = document.querySelector('input[type="submit"]');
+            document.querySelector('.spinner').style.display = 'inline-block';
+            button.disabled = true;
+
+            let formData = new FormData(document.getElementById("resumeForm"));
+
+            // Extract the token from the form
+            const token = formData.get("token");
+            // formData.delete("token");  // Remove token from form data as it's now in the header
+
+            fetch("/analyse_resume", {
+                method: "POST",
+                // headers: {
+                //     "x_token": token  // not working server side
+                // },
+                body: formData
+            })
+                .then(response => {
+                    if (!response.ok && (response.status === 422 || response.status === 401)) {
+                        throw new Error('Invalid token provided.');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Hide form
+                    document.getElementById("resumeForm").style.display = "none";
+                    displayResults(data);
+
+                    // Hide spinner and enable the button
+                    document.querySelector('.spinner').style.display = 'none';
+                    button.disabled = false;
+                })
+                .catch(error => {
+                    alert(error.message); // Show the error message to the user
+
+                    // Hide spinner and enable the button
+                    document.querySelector('.spinner').style.display = 'none';
+                    button.disabled = false;
+                });
+        }
+
+
+        function displayResults(data) {
+            document.getElementById("resultsSection").style.display = "block";
+
+            
+
+            // Cover Letter
+            // document.getElementById("coverLetterResult").innerText = data.cover_letter || "Not Provided";
+
+            // Required Skills
+            let requiredSkillsTable = "";
+            data.requiredSkills.forEach(skill => {
+                let matchClass = "match-" + skill.match; // e.g., match-yes, match-no
+                requiredSkillsTable += `<tr><td>${skill.skill}</td><td class="${matchClass}">${skill.experience}</td></tr>`;
+            });
+            document.getElementById("requiredSkillsResult").innerHTML = requiredSkillsTable;
+
+            // Nice to Have Skills
+            let niceToHaveSkillsTable = "";
+            data.niceToHaveSkills.forEach(skill => {
+                let matchClass = "match-" + skill.match;
+                niceToHaveSkillsTable += `<tr><td>${skill.skill}</td><td class="${matchClass}">${skill.experience}</td></tr>`;
+            });
+            // document.getElementById("niceToHaveSkillsResult").innerHTML = niceToHaveSkillsTable;
+
+            // Good Matching
+            document.getElementById("goodMatchingResult").innerText = data.goodMatching ? "Yes" : "No";
+
+            // Explanation
+            document.getElementById("explanationResult").innerText = data.explanation || "Not Provided";
+        }
+        // function updateProgressBar() {
+        //     let totalFields = 3; // Number of input fields
+        //     let filledFields = 0;
+
+        //     let inputs = document.querySelectorAll('#resumeForm input, #resumeForm textarea');
+        //     inputs.forEach(input => {
+        //         if (input.value.trim() !== '') {
+        //             filledFields++;
+        //         }
+        //     });
+
+        //     let progress = (filledFields / totalFields) * 100;
+        //     document.getElementById('progress').style.width = progress + '%';
+        // }
+
+        // document.addEventListener('input', updateProgressBar);
+
+
+    </script>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
+        <a class="navbar-brand" href="#">Deepmtch - Resume Analyzer BETA</a>
+        <div class="navbar-collapse">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">About</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Services</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Contact</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+
+
+    <div class="container">
+        <form id="resumeForm">
+            <div class="form-group">
+                <label for="resume">Upload Resume:</label>
+                <input type="file" name="resume" class="form-control-file" required>
+            </div>
+            <div class="form-group">
+                <label for="jobbeschreibung">Job Description:</label>
+                <textarea name="jobbeschreibung" rows="10" class="form-control" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="token">API Token:</label>
+                <input type="text" name="token" class="form-control" required>
+            </div>
+            <input type="submit" value="Analyze Resume" class="button">
+            <span class="spinner"></span>
+        </form>
+
+        <div id="resultsSection" style="display: none;">
+            <h2>Result Analysis</h2>
+            <div class="container mt-4">
+                <table class="table">
+                    <tbody>
+                        <tr>
+                            <td>Required Skills</td>
+                            <td>
+                                <table id="requiredSkillsResult" class="table"></table>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Good Matching</td>
+                            <td id="goodMatchingResult"></td>
+                        </tr>
+                        <tr>
+                            <td>Explanation</td>
+                            <td id="explanationResult"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <button class="button mt-4" onclick="goBackToRoot()">Go Back</button>
+
+        </div>
+    </div>
+
+</body>
+
+</html>
